@@ -270,10 +270,7 @@ $$
 ## 7.1 Over-filtering
 - **Symptom:** Disconnected learning curve; $D^*$ starves batch processing.
 - **Correction:** Implement a unified safety distribution limit:
-$$
-q' = \lambda q + (1 - \lambda)\mathcal{U}
-$$
-
+$q' = \lambda q + (1 - \lambda)\mathcal{U}$  
 *(where $\mathcal{U}$ is the standard Uniform distribution).*
 
 ## 7.2 Mode Collapse
