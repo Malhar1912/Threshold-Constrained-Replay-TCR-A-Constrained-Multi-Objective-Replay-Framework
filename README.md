@@ -46,15 +46,25 @@ $$
 q^*(\tau) \propto p(\tau)\exp(w^\top U(\tau))
 $$
 
-## 0.4 Empirical Validation Requirement
+## 0.4 GATE: Proxy Approximation Validity (Prerequisite Experiment)
 
-We **must validate**:
+**Purpose:** Foundational proof that $w^\top U(\tau)$ meaningfully predicts true learning gains. **This experiment MUST pass before proceeding to Phases 1–7.**
 
 $$
-\text{corr}(w^\top U(\tau), \widehat{\Delta \mathcal{L}}(\tau)) > 0
+\text{Hypothesis: } \text{corr}(w^\top U(\tau), \widehat{\Delta \mathcal{L}}(\tau)) > 0.3 \quad (p < 0.05)
 $$
 
-*This is a required experiment (not optional).*
+### Quick Specification
+- **Benchmarks:** Atari-100k (5 games) + DMC (3 tasks) + 2 random seeds
+- **Test:** Stratified correlation (500 sampled trajectories per env)
+- **Metrics:** Pearson $\rho$, Spearman $\rho_s$, per-component ablation
+- **Acceptance:** ≥80% of envs pass ($\rho > 0.3$, $p < 0.05$)
+- **If FAILS:** Re-engineer utility components (Section 1.2) before proceeding
+
+**Full Details:** [VALIDATION_PROTOCOL_0.4.md](VALIDATION_PROTOCOL_0.4.md)
+
+**Timeline:** 1–2 weeks (prerequisite gate)**  
+**Blocks:** Phases 1–7 cannot proceed without passing 0.4
 
 ---
 
@@ -231,37 +241,44 @@ $$
 
 ---
 
-# 📊 PHASE 6: Empirical Validation Protocol
+# 📊 PHASE 6: Performance Validation (Full Benchmark)
 
-## 6.1 Core Experiments
+**Prerequisite:** Phase 0.4 (proxy validity gate) must pass before starting Phase 6.
+
+**Objective:** Demonstrate that TCR yields superior sample efficiency and compute efficiency compared to standard replay methods.
+
+## 6.1 Experimental Protocol
 
 **MUST Include:**
-1. Correlation Proof: $w^\top U(\tau)$ **vs** $\widehat{\Delta \mathcal{L}}(\tau)$
-2. Sub-metric Ablations:
-   - Remove individual utility axes ($\hat{R}$, $\hat{\mathcal{N}}$, $\widehat{\Delta V}$).
-   - Remove global constraints (thresholds = 0).
-   - Static threshold boundaries **vs** adaptive boundaries.
+1. **Ablation Studies:**
+   - ✓ Component ablation: Remove individual utility axes ($\hat{R}$, $\hat{\mathcal{N}}$, $\widehat{\Delta V}$)
+   - ✓ Constraint ablation: Disable thresholds (set $\theta_i = -\infty$)
+   - ✓ Threshold adaptation: Static $\theta$ vs. adaptive (EMA-based)
+
+2. **Baseline Comparisons:**
+   - Uniform replay (baseline)
+   - Prioritized Experience Replay (PER)
+   - DreamerV3 Native (Recurrent Replay)
+   - Multi-metric routing without constraints
 
 ## 6.2 Target Benchmarks
-- **Atari-100k:** (full suite or standard 26 subset)
-- **DeepMind Control (DMC):** (6+ robust tasks)
-- **Procgen:** (Evaluate OOD generalization capabilities)
+- **Atari-100k:** Full suite (57 games) or standard 26-game subset
+- **DeepMind Control (DMC):** 6+ robust tasks
+- **Procgen:** OOD generalization (14 train, 14 test environments)
 
-## 6.3 Standard Baselines
-- Uniform replay
-- Prioritized Experience Replay (PER)
-- DreamerV3 Native (Recurrent Replay)
-- Multi-metric routing (no feasible bounds / no constraints)
+**Note:** Reduced from 0.4 scope (0.4 uses 5-10 Atari games; Phase 6 uses full suite)
 
-## 6.4 Primary Metrics
-- Extrinsic reward vs. environment interactions
-- Extrinsic reward vs. wall-clock compute (efficiency benchmark)
-- Cache insertion/Replay efficiency latency logs
+## 6.3 Primary Metrics
+- **Sample Efficiency:** Extrinsic reward vs. environment interactions (% of 1M transitions)
+- **Compute Efficiency:** Extrinsic reward vs. wall-clock time
+- **Replay Overhead:** Cache insertion + sampling latency (ms/batch)
+- **Statistical Summary:** IQM (Interquartile Mean) + 95% bootstrap CI
 
-## 6.5 Statistical Rigor Framework
-- Minimal $n \ge 5$ varying seeds
+## 6.4 Statistical Rigor Framework
+- Minimal $n \ge 5$ varying seeds per environment
 - Evaluate using Interquartile Means (IQM, via `RLiable`)
 - Confidence intervals aggregated through bootstrap bounds (95% CI)
+- Significance test: $p < 0.05$ for performance differences
 
 ---
 
