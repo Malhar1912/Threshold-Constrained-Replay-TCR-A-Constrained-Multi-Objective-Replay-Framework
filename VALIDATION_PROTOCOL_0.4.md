@@ -1,6 +1,8 @@
 # EMPIRICAL VALIDATION PROTOCOL (0.4)
 ## Correlation Validation Experiment (Q1-Level)
 
+**Related Documentation:** See [README.md](README.md#04-empirical-validation-requirement-q1-level) Section 0.4 for high-level requirements summary.
+
 ---
 
 ## Executive Summary

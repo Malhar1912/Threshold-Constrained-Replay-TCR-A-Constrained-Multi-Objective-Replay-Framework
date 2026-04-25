@@ -1,0 +1,208 @@
+# Phase 0.4: Proxy Approximation Validity Gate
+# Configuration for correlation validation experiment
+
+experiment:
+  name: "phase_0_4_proxy_validation"
+  description: "Validate that w^T U(τ) predicts empirical learning gain ΔL̂(τ)"
+  status: "prerequisite_gate"
+  version: "1.0"
+
+# Benchmarks (Mandatory)
+benchmarks:
+  atari:
+    enabled: true
+    games:
+      - "Pong"
+      - "Breakout"
+      - "Seaquest"
+      - "SpaceInvaders"
+      - "MsPacman"
+    episodes_per_game: 200          # ~10K trajectories
+    trajectories_per_game: 10000     # minimum sample
+
+  dmc:
+    enabled: true
+    tasks:
+      - "walker-walk"
+      - "cheetah-run"
+      - "finger-spin"
+    episodes_per_task: 100
+    trajectories_per_task: 5000
+
+# Agent Configuration
+agent:
+  algorithm: "DreamerV3"
+  encoder_depth: 32
+  latent_size: 256
+  horizon: 15
+  batch_size: 16
+  learning_rate: 2e-4
+  gamma: 0.99
+  use_pretrained_checkpoint: false
+
+# Replay Buffer
+buffer:
+  capacity: 1000000  # 1M timesteps
+  fill_strategy: "uniform_random"
+  trajectory_min_length: 2
+  trajectory_max_length: 1000
+
+# Utility Vector Configuration
+utility:
+  components:
+    - name: "reward"
+      symbol: "R(τ)"
+      enabled: true
+      normalization: "ema"
+    - name: "novelty"
+      symbol: "N(τ)"
+      enabled: true
+      normalization: "ema"
+    - name: "td_error"
+      symbol: "ΔV(τ)"
+      enabled: true
+      normalization: "ema"
+    - name: "goal_proximity"
+      symbol: "G(τ)"
+      enabled: true
+      task_specific: true
+      normalization: "ema"
+
+  normalization:
+    ema_decay: 0.01
+    epsilon: 1e-8
+    target_distribution: "standard_normal"  # N(0,1)
+
+# Learning Gain Measurement
+learning_gain:
+  measurement_strategy: "stratified_sgd"
+  n_samples: 500  # per environment
+  stratified_quantiles: [0, 25, 50, 75, 100]
+  samples_per_quantile: 125
+  learning_rate: 1e-4
+  batch_size: 1
+
+# Weight Vector Initialization
+weight_vector:
+  strategy: "equal_weighting"  # "equal_weighting" or "regression_optimized"
+  equal_weight_value: null  # computed as 1/sqrt(d)
+  # for regression_optimized:
+  fit_intercept: false
+
+# Correlation Analysis
+correlation:
+  primary_metric: "pearson"
+  robustness_metrics:
+    - "spearman"
+    - "kendall"
+  significance_level: 0.05
+  ci_level: 0.95
+  ci_method: "bootstrap"
+  bootstrap_samples: 10000
+
+# Acceptance Criteria
+acceptance_criteria:
+  correlation_threshold: 0.3
+  pvalue_threshold: 0.05
+  min_env_pass_rate: 0.8  # ≥80% of envs must pass
+  spearman_tolerance: 0.05  # within 0.05 of pearson
+  component_dominance_threshold: 0.95  # no component should exceed this alone
+  min_sample_size: 500
+
+# Visualization
+visualization:
+  backend: "matplotlib"
+  figure_format: "png"
+  dpi: 300
+  style: "seaborn-v0_8-darkgrid"
+  
+  figures:
+    scatter_plot:
+      enabled: true
+      filename: "01_proxy_vs_gain_scatter.png"
+      grid: [2, 3]  # 2 rows, 3 cols for environments
+      density_colormap: "viridis"
+      confidence_band: true
+      
+    correlation_barplot:
+      enabled: true
+      filename: "02_correlation_barplot.png"
+      show_ci: true
+      show_threshold_line: true
+      
+    component_heatmap:
+      enabled: true
+      filename: "03_component_ablation_heatmap.png"
+      colormap: "YlOrRd"  # white→red
+
+# Seeds and Reproducibility
+seeds:
+  n_seeds: 2  # minimum 2 seeds per environment
+  seed_list: [42, 123]
+  torch_deterministic: true
+  cudnn_deterministic: true
+
+# Logging and Checkpointing
+logging:
+  log_level: "INFO"
+  log_dir: "./logs"
+  log_format: "[%(asctime)s][%(name)s][%(levelname)s] %(message)s"
+
+checkpointing:
+  save_frequency: 100  # save every N trajectories
+  checkpoint_dir: "./checkpoints"
+  save_utilities: true
+  save_gains: true
+  save_model_snapshots: false  # expensive; disable for speed
+
+# Resource Allocation
+resources:
+  n_workers: 4  # data collection parallelism
+  gpu_per_worker: 0.25
+  use_mixed_precision: true
+  dtype: "float32"  # or "float16" for memory efficiency
+
+# Experimental Protocol Timeline
+protocol:
+  phase_1_data_collection:
+    duration_hours: 48
+    parallelizable: true
+    
+  phase_2_utility_computation:
+    duration_hours: 4
+    parallelizable: true
+    
+  phase_3_learning_gain:
+    duration_hours: 80
+    parallelizable: true
+    
+  phase_4_correlation_analysis:
+    duration_hours: 1
+    parallelizable: false
+    
+  phase_5_visualization:
+    duration_hours: 8
+    parallelizable: false
+
+# Output
+output:
+  base_dir: "./results"
+  create_timestamp_suffix: true
+  save_dataframe_csv: true
+  save_results_json: true
+  save_summary_txt: true
+
+# Failure Mode Mitigations
+failure_modes:
+  infeasible_thresholds:
+    enabled: true
+    fallback_strategy: "dynamic_relaxation"
+    
+  divergence_explosion:
+    enabled: true
+    max_kl_divergence: 0.5
+    
+  proxy_correlation_failure:
+    enabled: true
+    min_required_correlation: 0.3
+    fallback_to_regression: true

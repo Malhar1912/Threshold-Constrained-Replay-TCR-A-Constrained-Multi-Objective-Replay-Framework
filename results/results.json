@@ -1,0 +1,82 @@
+{
+  "experiment": {
+    "start_time": "2026-04-25T17:20:33.362044",
+    "config_path": "config.yaml",
+    "config": {
+      "output": {
+        "base_dir": "results",
+        "save_dataframe_csv": true,
+        "save_results_json": true,
+        "save_summary_txt": true
+      },
+      "agent": {
+        "gamma": 0.99
+      },
+      "utility": {
+        "normalization": {
+          "ema_decay": 0.99,
+          "epsilon": 1e-08
+        }
+      },
+      "learning_gain": {
+        "n_samples": 500,
+        "stratified_quantiles": [
+          0,
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "learning_rate": 0.001
+      },
+      "correlation": {
+        "significance_level": 0.05,
+        "ci_level": 0.95,
+        "bootstrap_samples": 10000
+      },
+      "acceptance_criteria": {
+        "correlation_threshold": 0.3,
+        "spearman_tolerance": 0.05,
+        "min_environments": 6,
+        "min_env_pass_rate": 1.0
+      },
+      "visualization": {
+        "dpi": 300,
+        "figures": {
+          "scatter_plot": {
+            "filename": "01_proxy_vs_gain_scatter.png"
+          },
+          "correlation_barplot": {
+            "filename": "02_correlation_barplot.png"
+          },
+          "component_heatmap": {
+            "filename": "03_component_ablation_heatmap.png"
+          }
+        }
+      },
+      "weight_vector": {
+        "strategy": "equal_weighting",
+        "values": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ]
+      }
+    }
+  },
+  "aggregate_results": {
+    "n_environments": 6,
+    "n_pass": 6,
+    "pass_rate": 1.0,
+    "mean_pearson_r": 0.3729185615966335,
+    "std_pearson_r": 0.030866593701565432,
+    "median_pearson_r": 0.3609427390875367
+  },
+  "weight_vector": [
+    0.5,
+    0.5,
+    0.5,
+    0.5
+  ]
+}
